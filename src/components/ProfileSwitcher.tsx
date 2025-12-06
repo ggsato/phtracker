@@ -1,9 +1,11 @@
-import { useMemo } from "react";
 import { Select, Tooltip } from "@chakra-ui/react";
+import { useMemo } from "react";
 import { useProfiles } from "../hooks/useProfiles";
+import { useI18n } from "../i18n";
 
 const ProfileSwitcher = () => {
-  const { profiles, currentProfileId, setCurrentProfile } = useProfiles();
+  const { profiles, currentProfileId, setCurrentProfile, loading } = useProfiles();
+  const { t } = useI18n();
 
   const options = useMemo(
     () => profiles.map((p) => ({ label: p.displayName, value: p.id })),
@@ -11,13 +13,15 @@ const ProfileSwitcher = () => {
   );
 
   return (
-    <Tooltip label="Choose who you are tracking" hasArrow>
+    <Tooltip label={t("profileTooltip")} hasArrow>
       <Select
         maxW="180px"
         size="md"
         variant="filled"
         bg="white"
+        placeholder={loading ? t("profileLoading") : t("profilePlaceholder")}
         value={currentProfileId}
+        isDisabled={!options.length || loading}
         onChange={(e) => setCurrentProfile(e.target.value)}
       >
         {options.map((opt) => (
