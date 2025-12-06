@@ -1,0 +1,18 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Manrope, "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: linear-gradient(180deg, #f8fbfa 0%, #f1f6f4 50%, #e7f1ed 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
