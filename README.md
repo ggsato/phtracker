@@ -37,6 +37,26 @@ VITE_API_USER_ID=demo-user
 - `npm run preview` – serve the built bundle locally.
 - `npm run lint` – ESLint on `src/**/*.{ts,tsx}`.
 - `npm test` / `npm run test:watch` – Vitest (jsdom, threads disabled for determinism).
+- `bash scripts/deploy_backend.sh` – deploys the AWS backend using `infra/config.env`.
+- `FRONTEND_BUCKET=... CLOUDFRONT_DISTRIBUTION_ID=... bash scripts/deploy_frontend.sh` – build + sync `dist/` to S3 and invalidate CloudFront.
+- `bash scripts/undeploy_backend.sh` – delete the backend stack (`APP_NAME-ENV` from `infra/config.env`).
+- `FRONTEND_BUCKET=... CLOUDFRONT_DISTRIBUTION_ID=... bash scripts/undeploy_frontend.sh` – empty S3 bucket; with `DELETE_DIST=true` disables and deletes the distribution.
+
+### Handy AWS lookups
+- Backend outputs (stack name = `APP_NAME-ENV`, e.g. `phtracker-prod`):
+  ```
+  aws cloudformation describe-stacks --stack-name phtracker-prod --region ap-northeast-1 \
+    --query "Stacks[0].Outputs"
+  ```
+- CloudFront DistributionId for the frontend alias:
+  ```
+  aws cloudfront list-distributions \
+    --query "DistributionList.Items[?Aliases.Items[?@=='app.phtracker.kenkoichiban.jp']].{Id:Id,Domain:DomainName}"
+  ```
+- S3 bucket listing (to find your frontend bucket):
+  ```
+  aws s3 ls
+  ```
 
 ## Key Concepts (from the summary)
 - Simple vs. Advanced modes align with the AWS/Lambda/DynamoDB design in `PROJECT_SUMMARY.md`, with per-profile preferences and future Garmin/modeling hooks.

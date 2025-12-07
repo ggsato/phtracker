@@ -30,12 +30,20 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /phtracker/dev/jwt_audience
     Description: SSM path containing JWT audience/client ID (no secrets committed).
+  CustomDomainName:
+    Type: String
+    Default: ''
+    Description: Optional custom domain for the HTTP API (e.g., api.example.com).
+  CustomDomainCertArn:
+    Type: String
+    Default: ''
+    Description: ACM certificate ARN for the custom domain (must be in the same region as the API).
 
 Globals:
   Function:
     Runtime: python3.12
     Architectures:
-      - arm64
+      - x86_64
     Timeout: 10
     MemorySize: 512
     Tracing: Active
@@ -55,6 +63,9 @@ Globals:
 
 Conditions:
   HasIssuer: !Not [ !Equals [ !Ref JwtIssuer, '' ] ]
+  HasCustomDomain: !And
+    - !Not [ !Equals [ !Ref CustomDomainName, '' ] ]
+    - !Not [ !Equals [ !Ref CustomDomainCertArn, '' ] ]
 
 Resources:
   PhtrackerTable:
@@ -81,13 +92,31 @@ Resources:
         AllowHeaders:
           - Authorization
           - Content-Type
+          - x-user-id
         AllowMethods:
           - GET
           - POST
           - PUT
           - PATCH
           - DELETE
-      StageName: !Ref Env
+
+  ApiCustomDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Condition: HasCustomDomain
+    Properties:
+      DomainName: !Ref CustomDomainName
+      DomainNameConfigurations:
+        - CertificateArn: !Ref CustomDomainCertArn
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+
+  ApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Condition: HasCustomDomain
+    Properties:
+      ApiId: !Ref HttpApi
+      DomainName: !Ref ApiCustomDomain
+      Stage: $default
 
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -147,10 +176,14 @@ Outputs:
     Value: !Ref PhtrackerTable
   HttpApiUrl:
     Description: Base URL for the HTTP API.
-    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Env}'
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
   UserPoolId:
     Description: Cognito User Pool ID.
     Value: !Ref UserPool
   UserPoolClientId:
     Description: Cognito App Client ID for the SPA.
     Value: !Ref UserPoolClient
+  CustomDomain:
+    Condition: HasCustomDomain
+    Description: Custom domain configured for the HTTP API.
+    Value: !Ref ApiCustomDomain

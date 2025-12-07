@@ -56,11 +56,24 @@ echo "[info] Running sam build..."
 sam build --use-container
 
 echo "[info] Running sam deploy..."
-sam deploy --stack-name "${APP_NAME}-${ENV}" --resolve-s3 --capabilities CAPABILITY_IAM \
-  --parameter-overrides Env="${ENV}" AppName="${APP_NAME}" \
-  CorsAllowedOrigins="${CORS_ALLOWED_ORIGINS}" \
-  CognitoCallbackURLs="${COGNITO_CALLBACK_URLS}" \
+PARAM_OVERRIDES=(
+  Env="${ENV}"
+  AppName="${APP_NAME}"
+  CorsAllowedOrigins="${CORS_ALLOWED_ORIGINS}"
+  CognitoCallbackURLs="${COGNITO_CALLBACK_URLS}"
   CognitoLogoutURLs="${COGNITO_LOGOUT_URLS}"
+  JwtAudienceParam="${SSM_JWT_AUDIENCE_PARAM}"
+)
+
+if [[ -n "${CUSTOM_DOMAIN_NAME}" && -n "${CUSTOM_DOMAIN_CERT_ARN}" ]]; then
+  PARAM_OVERRIDES+=(
+    CustomDomainName="${CUSTOM_DOMAIN_NAME}"
+    CustomDomainCertArn="${CUSTOM_DOMAIN_CERT_ARN}"
+  )
+fi
+
+sam deploy --stack-name "${APP_NAME}-${ENV}" --resolve-s3 --capabilities CAPABILITY_IAM \
+  --parameter-overrides "${PARAM_OVERRIDES[@]}"
 popd >/dev/null
 
 echo "[info] Setup finished."

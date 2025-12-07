@@ -5,6 +5,7 @@
 - AWS SAM CLI + Docker (for container builds)
 - Python 3.12 runtime and FastAPI+Mangum app in `backend/`
 - SSM parameters created for JWT audience (`/phtracker/dev/jwt_audience`, etc.)
+- If SAM or Docker are missing, run `bash infra/install_prereqs.sh` (Debian/Ubuntu automates Docker; others may need manual Docker install).
 
 ## Quick start (config-driven)
 1) Copy `infra/config.example.env` to `infra/config.env` and edit values (app name, env, CORS origins, Cognito URLs, SSM param path). Set `RUN_DEPLOY=true` to let the script deploy.
@@ -13,6 +14,8 @@
    cd infra
    bash setup_from_config.sh
    ```
+   (Wrapper available: `bash scripts/deploy_backend.sh`)
+3) Optional: to use a custom domain, set `CUSTOM_DOMAIN_NAME` and `CUSTOM_DOMAIN_CERT_ARN` in `config.env`. The ACM cert must be in the same region as the API Gateway. Create a DNS record (CNAME/A alias) pointing `CUSTOM_DOMAIN_NAME` to the API Gateway domain output after deploy.
 
 ## Manual deploy (dev)
 ```bash
