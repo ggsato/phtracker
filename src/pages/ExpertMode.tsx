@@ -10,16 +10,23 @@ import {
   Heading,
   HStack,
   Input,
+  RangeSlider,
+  RangeSliderFilledTrack,
+  RangeSliderThumb,
+  RangeSliderTrack,
   SimpleGrid,
   Spinner,
   Stack,
   Text,
+  useToast,
 } from "@chakra-ui/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePhBands } from "../hooks/usePhBands";
 import { usePhLogs } from "../hooks/usePhLogs";
 import { usePralSearch } from "../hooks/usePralSearch";
 import { useProfiles } from "../hooks/useProfiles";
 import { useI18n } from "../i18n";
+import { DEFAULT_PH_BANDS, isValidBands, PhBands } from "../lib/phBands";
 
 const ExpertMode = () => {
   const { currentProfileId } = useProfiles();
@@ -28,6 +35,14 @@ const ExpertMode = () => {
     usePralSearch(currentProfileId);
   const [query, setQuery] = useState(pralResult?.query ?? "");
   const { t } = useI18n();
+  const { bands, setBands, resetBands } = usePhBands();
+  const [draftBands, setDraftBands] = useState<PhBands>(bands);
+  const toast = useToast();
+
+  useEffect(() => {
+    setDraftBands(bands);
+  }, [bands]);
+
 
   const stats = useMemo(
     () => [
@@ -75,6 +90,116 @@ const ExpertMode = () => {
           <Divider my={6} />
 
           <Stack spacing={4}>
+            <Card variant="outline" borderColor="gray.100" bg="gray.50">
+              <CardHeader pb={2}>
+                <Stack spacing={1}>
+                  <Heading size="md">{t("acidityRangesTitle")}</Heading>
+                  <Text color="gray.600">{t("acidityRangesDescription")}</Text>
+                  <Text color="gray.500" fontSize="sm">
+                    {t("acidityRangesHintDefault")}
+                  </Text>
+                </Stack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <Stack spacing={4}>
+                  <RangeSlider
+                    min={5}
+                    max={7.5}
+                    step={0.05}
+                    value={[
+                      draftBands.acidicUpper,
+                      draftBands.slightlyAcidicUpper,
+                      draftBands.neutralUpper,
+                      draftBands.slightlyAlkalineUpper,
+                    ]}
+                    onChange={(vals) =>
+                      setDraftBands({
+                        acidicUpper: Number(vals[0]),
+                        slightlyAcidicUpper: Number(vals[1]),
+                        neutralUpper: Number(vals[2]),
+                        slightlyAlkalineUpper: Number(vals[3]),
+                      })
+                    }
+                  >
+                    <RangeSliderTrack bg="gray.100">
+                      <RangeSliderFilledTrack bg="brand.500" />
+                    </RangeSliderTrack>
+                    <RangeSliderThumb index={0} boxSize={5} />
+                    <RangeSliderThumb index={1} boxSize={5} />
+                    <RangeSliderThumb index={2} boxSize={5} />
+                    <RangeSliderThumb index={3} boxSize={5} />
+                  </RangeSlider>
+                  <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3}>
+                    <Box>
+                      <Text fontWeight="600" color="gray.700" fontSize="sm">
+                        {t("acidityAcidic")}
+                      </Text>
+                      <Text color="gray.600" fontFamily="mono">
+                        ≤ {draftBands.acidicUpper.toFixed(2)}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontWeight="600" color="gray.700" fontSize="sm">
+                        {t("aciditySlightlyAcidic")}
+                      </Text>
+                      <Text color="gray.600" fontFamily="mono">
+                        ≤ {draftBands.slightlyAcidicUpper.toFixed(2)}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontWeight="600" color="gray.700" fontSize="sm">
+                        {t("acidityNeutral")}
+                      </Text>
+                      <Text color="gray.600" fontFamily="mono">
+                        ≤ {draftBands.neutralUpper.toFixed(2)}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontWeight="600" color="gray.700" fontSize="sm">
+                        {t("aciditySlightlyAlkaline")}
+                      </Text>
+                      <Text color="gray.600" fontFamily="mono">
+                        ≤ {draftBands.slightlyAlkalineUpper.toFixed(2)}
+                      </Text>
+                    </Box>
+                  </SimpleGrid>
+                  <HStack spacing={3}>
+                    <Button
+                      onClick={() => {
+                        if (!isValidBands(draftBands)) {
+                          toast({
+                            title: t("acidityInvalidOrder"),
+                            status: "warning",
+                            duration: 2500,
+                            isClosable: true,
+                          });
+                          return;
+                        }
+                        setBands(draftBands);
+                        toast({
+                          title: t("aciditySaved"),
+                          status: "success",
+                          duration: 2000,
+                          isClosable: true,
+                        });
+                      }}
+                    >
+                      {t("aciditySave")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setDraftBands(DEFAULT_PH_BANDS);
+                        resetBands();
+                      }}
+                    >
+                      {t("acidityReset")}
+                    </Button>
+                  </HStack>
+                </Stack>
+              </CardBody>
+            </Card>
+
             <Box>
               <Heading size="md" mb={2}>
                 {t("chartsHeading")}

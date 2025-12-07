@@ -1,5 +1,13 @@
-import { Select, Tooltip } from "@chakra-ui/react";
+import {
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Tooltip,
+} from "@chakra-ui/react";
 import { useMemo } from "react";
+import { FiUsers } from "react-icons/fi";
 import { useProfiles } from "../hooks/useProfiles";
 import { useI18n } from "../i18n";
 
@@ -12,25 +20,31 @@ const ProfileSwitcher = () => {
     [profiles],
   );
 
+  const Icon = FiUsers;
+  const currentLabel = options.find((opt) => opt.value === currentProfileId)?.label ?? t("profilePlaceholder");
+
   return (
-    <Tooltip label={t("profileTooltip")} hasArrow>
-      <Select
-        maxW="180px"
-        size="md"
-        variant="filled"
-        bg="white"
-        placeholder={loading ? t("profileLoading") : t("profilePlaceholder")}
-        value={currentProfileId}
-        isDisabled={!options.length || loading}
-        onChange={(e) => setCurrentProfile(e.target.value)}
-      >
+    <Menu>
+      <Tooltip label={t("profileTooltip")}
+        hasArrow>
+        <MenuButton
+          as={IconButton}
+          aria-label={t("profileTooltip")}
+          icon={<Icon />}
+          variant="ghost"
+          isDisabled={!options.length || loading}
+          title={currentLabel}
+        />
+      </Tooltip>
+      <MenuList>
         {options.map((opt) => (
-          <option value={opt.value} key={opt.value}>
+          <MenuItem key={opt.value} onClick={() => setCurrentProfile(opt.value)}>
+            {currentProfileId === opt.value ? "✓ " : ""}
             {opt.label}
-          </option>
+          </MenuItem>
         ))}
-      </Select>
-    </Tooltip>
+      </MenuList>
+    </Menu>
   );
 };
 

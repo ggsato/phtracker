@@ -1,7 +1,7 @@
 # Work Summary
 
-- Added simple i18n layer with Language toggle (日本語/English) in the header; default locale is Japanese and remembered in localStorage.
-- Localized UI text via translations across simple/expert modes, tooltips, PRAL search, and aria labels; set `index.html` `lang="ja"`.
-- Kept profile-aware API calls and offline caches intact; PRAL search/cache now respects localization for UI messages.
-- Ran `npm run lint` and `npm run test` to confirm status after changes.
-- Dev server is currently running on `0.0.0.0:8080` (see `/tmp/phtracker-dev.log`; PID 52084).
+- Rebuilt Simple Mode input: toggles for whole/decimal (0.25 steps, range 5.0–7.5) with auto-save, responsive 2-column layout, centered pH display, neutral/acid/alkaline color bands, decimal `.75` hidden when whole=7, and removal of redundant labels.
+- Updated acidity band defaults (acidic ≤5.75, slightly acidic ≤6.5, neutral ≤7.25, slightly alkaline ≤7.5; alkaline above) and switched neutral to a green palette.
+- Expert Mode now uses a multi-thumb range slider to adjust pH band breakpoints; removed icon settings block.
+- Header controls: language menu is a globe icon; profile switcher uses a group icon; removed per-user icon settings.
+- i18n copy updated for new defaults; lint clean on latest changes (`npm run lint`).
