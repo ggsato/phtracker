@@ -31,10 +31,12 @@ describe("usePralSearch", () => {
     const cached = JSON.parse(localStorage.getItem("phtracker.pral.me") ?? "{}");
     expect(cached.query).toBe("spinach");
     expect(cached.items[0].name).toBe("Spinach");
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/pral/search",
+    const call = fetchMock.mock.calls[0];
+    expect(call[0]).toContain("/foods?query=spinach");
+    expect(call[1]).toEqual(
       expect.objectContaining({
-        body: JSON.stringify({ query: "spinach", profile_id: "me" }),
+        method: "GET",
+        headers: expect.objectContaining({ "Content-Type": "application/json" }),
       }),
     );
   });

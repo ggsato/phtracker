@@ -17,12 +17,19 @@ Family-friendly pH logging app with a grandma-first simple mode, richer expert t
 ## Getting Started
 1) Install Node.js 18+ and npm.  
 2) Install deps: `npm install`  
-3) Run dev server: `npm run dev` (defaults to port 5173).  
+3) Run dev server: `npm run dev` (defaults to port 5173) or `npm run dev:host` to bind `0.0.0.0:8080`.  
 4) Build for production: `npm run build` and preview locally with `npm run preview`.
 
 ## Environment
-- `VITE_API_BASE_URL` (optional): API origin for `/profiles`, `/profiles/:id/ph-logs`, and `/pral/search`. Defaults to `/api` so you can proxy during local dev.
+- `VITE_API_BASE_URL` (optional): API origin for `/profiles`, `/ph-logs`, `/foods`. Defaults to `/api` so you can proxy during local dev (set to `http://localhost:8000` to hit the FastAPI dev server).
+- `VITE_API_USER_ID` (optional): injected as `x-user-id` header for local/demo use when Cognito/JWT is not wired yet.
 - Everything else runs client-side; data is synced when the API is reachable and kept locally when offline.
+
+Create a `.env.local` in the project root for local API:
+```
+VITE_API_BASE_URL=http://localhost:8000
+VITE_API_USER_ID=demo-user
+```
 
 ## Scripts
 - `npm run dev` – start Vite in dev mode.
