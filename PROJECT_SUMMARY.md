@@ -466,3 +466,51 @@ Again, mostly **frontend concerns**, no deep backend changes.
 Backend impact: **small but important** (mainly `profiles` + `profile_id` in logs).
 Frontend impact: **where most of the grandma-friendly work happens**.
 
+---
+
+# 12. **Secret management for a public repo (SSM Parameter Store)**
+
+Goal: keep the repo public while keeping secrets out of code and templates.
+
+* **SSM paths, not values, in git**: commit only parameter names (paths). Example `infra/config.dev.json`:
+
+```json
+{
+  "ssm": {
+    "cognitoClientSecret": "/phtracker/dev/cognito_client_secret",
+    "jwtSigningKey": "/phtracker/dev/jwt_signing_key"
+  },
+  "public": {
+    "apiBaseUrl": "https://<api-id>.execute-api.<region>.amazonaws.com"
+  }
+}
+```
+
+* **Store actual secrets in SSM (SecureString)**:
+
+```bash
+aws ssm put-parameter --name /phtracker/dev/cognito_client_secret --value "<secret>" --type SecureString --overwrite
+aws ssm put-parameter --name /phtracker/dev/jwt_signing_key --value "<secret>" --type SecureString --overwrite
+```
+
+* **Reference SSM in CloudFormation/SAM, not hardcoded values**:
+
+```yaml
+Parameters:
+  Env: { Type: String, Default: dev }
+  CognitoClientSecretParam:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /phtracker/dev/cognito_client_secret
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          COGNITO_CLIENT_SECRET: !Ref CognitoClientSecretParam
+```
+
+* **Git hygiene**: keep `.env`/`.env.local` out of git; provide `.env.example` with placeholders only.
+* **CI/CD**: use GitHub Actions OIDC to assume an AWS role with `ssm:GetParameter`/`GetParametersByPath` and deploy; no long-lived AWS keys in the repo.
+* **Frontend**: only public values (API base URL, region) live in client code; all secrets stay server-side.

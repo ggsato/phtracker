@@ -7,17 +7,27 @@ import {
   Flex,
   Heading,
   HStack,
+  Icon,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   SimpleGrid,
   Stack,
   Text,
-  useToast,
   Popover,
   PopoverTrigger,
   PopoverContent,
   PopoverArrow,
   PopoverBody,
   Portal,
+  Textarea,
+  useToast,
 } from "@chakra-ui/react";
+import { FiAlertTriangle, FiCheckCircle } from "react-icons/fi";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePhBands } from "../hooks/usePhBands";
 import { usePhLogs } from "../hooks/usePhLogs";
@@ -48,6 +58,9 @@ const SimpleMode = () => {
   const [value, setValue] = useState(6.5);
   const [autoSavePending, setAutoSavePending] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [noteType, setNoteType] = useState<"same" | "notwell" | "note" | null>(null);
 
   const clampAndRound = useCallback((ph: number) => {
     const clamped = Math.min(MAX_PH, Math.max(MIN_PH, ph));
@@ -130,6 +143,29 @@ const SimpleMode = () => {
       return;
     }
     await handleSave(value, reason);
+  };
+
+  const openNoteModal = (type: "same" | "notwell" | "note" = "note") => {
+    setNoteType(type);
+    setNoteText(type === "notwell" ? t("notePresetNotWell") : "");
+    setNoteModalOpen(true);
+  };
+
+  const closeNoteModal = () => {
+    setNoteModalOpen(false);
+    setNoteText("");
+    setNoteType(null);
+  };
+
+  const submitNote = async () => {
+    const fallback =
+      noteType === "notwell"
+        ? t("notFeelingWell")
+        : noteType === "same"
+          ? t("sameAsUsual")
+          : t("noteDefault");
+    await handleQuickNote(noteText.trim() || fallback);
+    closeNoteModal();
   };
 
   return (
@@ -278,26 +314,58 @@ const SimpleMode = () => {
             </Stack>
           </SimpleGrid>
         </Box>
-        <HStack spacing={4} flexWrap="wrap">
-            <Button
-              size="lg"
-              variant="outline"
-                  flex="1"
-                  onClick={() => handleQuickNote(t("sameAsUsual"))}
-                  isDisabled={!currentProfileId || loading || saving}
-                >
-                  {t("sameAsUsual")}
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  flex="1"
-                  onClick={() => handleQuickNote(t("notFeelingWell"))}
-                  isDisabled={!currentProfileId || loading || saving}
-                >
-                  {t("notFeelingWell")}
-                </Button>
+        <Box>
+          <Button
+            size="lg"
+            variant="solid"
+            colorScheme="brand"
+            w="100%"
+            onClick={() => openNoteModal("note")}
+            isDisabled={!currentProfileId || loading || saving}
+            h="64px"
+          >
+            <HStack spacing={2} align="center" justify="center">
+              <Icon as={FiCheckCircle} boxSize={5} />
+              <Text fontWeight="800" fontSize="md">
+                {t("noteAddButton")}
+              </Text>
             </HStack>
+          </Button>
+        </Box>
+        <Modal isOpen={noteModalOpen} onClose={closeNoteModal} isCentered>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              {noteType === "notwell"
+                ? t("noteTitleNotWell")
+                : noteType === "same"
+                  ? t("noteTitleSame")
+                  : t("noteTitleNote")}
+            </ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Text mb={2} color="gray.600">
+                {t("noteSubtitle")}
+              </Text>
+              <Textarea
+                placeholder={t("notePlaceholder")}
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                minH="120px"
+              />
+            </ModalBody>
+            <ModalFooter>
+              <HStack spacing={3} w="100%" justify="flex-end">
+                <Button variant="ghost" onClick={closeNoteModal}>
+                  {t("noteCancel")}
+                </Button>
+                <Button colorScheme="brand" onClick={submitNote} isLoading={saving}>
+                  {t("noteSave")}
+                </Button>
+              </HStack>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
             {error ? (
               <Box bg="orange.50" p={4} borderRadius="lg" border="1px solid" borderColor="orange.200">
                 <Text color="orange.800" fontWeight="600">
