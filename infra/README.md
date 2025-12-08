@@ -25,7 +25,8 @@ sam deploy --stack-name phtracker-dev --resolve-s3 --capabilities CAPABILITY_IAM
   --parameter-overrides Env=dev AppName=phtracker \
   CorsAllowedOrigins=http://localhost:5173 \
   CognitoCallbackURLs=http://localhost:5173/callback \
-  CognitoLogoutURLs=http://localhost:5173
+  CognitoLogoutURLs=http://localhost:5173 \
+  EnableApiAuth=true
 ```
 
 Outputs include the HTTP API URL, DynamoDB table name, User Pool ID, and App Client ID.
@@ -34,3 +35,6 @@ Outputs include the HTTP API URL, DynamoDB table name, User Pool ID, and App Cli
 - DynamoDB table uses PK `PK` and SK `SK`; store items with prefixes (PROFILE#, PHLOG#, FOOD#, MODEL#).
 - `JwtAudienceParam` resolves from SSM so we do not commit client IDs or secrets; update per stage (`/phtracker/prod/jwt_audience`, etc.).
 - `JwtIssuer` parameter is optional; by default it uses the Cognito issuer for the created User Pool.
+- JWT authorizer is always enabled for the HTTP API; `JwtAudienceParam` must match the SPA app client ID. Lambda also accepts the User Pool ID for access tokens.
+- CORS: `AllowOrigins`/headers/methods are set from `CORS_ALLOWED_ORIGINS`; `AllowCredentials` is true. An OPTIONS `{proxy+}` route is configured with no authorizer so preflight bypasses JWT auth.
+- For local-only bypass, run the backend with `ALLOW_DEV_AUTH=true` (and optionally `DEMO_USER_ID`) instead of disabling auth in SAM.

@@ -5,14 +5,9 @@ import { Profile } from "../types";
 const STORAGE_KEY = "phtracker.profiles";
 const CURRENT_KEY = "phtracker.currentProfileId";
 
-const defaultProfiles: Profile[] = [
-  { id: "me", displayName: "Me", mode: "advanced", isDefault: true },
-  { id: "grandma", displayName: "Grandma", mode: "simple" },
-];
-
 export const useProfiles = () => {
-  const [profiles, setProfiles] = useState<Profile[]>(defaultProfiles);
-  const [currentProfileId, setCurrentProfileId] = useState<string>(defaultProfiles[0].id);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -41,24 +36,29 @@ export const useProfiles = () => {
       setError(null);
       try {
         const remote = await apiClient.fetchProfiles();
-        if (canceled || !remote.length) return;
+        if (canceled) return;
+        let nextProfiles = remote;
+        if (!remote.length) {
+          const created = await apiClient.createProfile("Me");
+          nextProfiles = [created];
+        }
 
-        setProfiles(remote);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+        setProfiles(nextProfiles);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProfiles));
 
         const savedCurrent = localStorage.getItem(CURRENT_KEY);
-        const savedExists = savedCurrent && remote.some((p) => p.id === savedCurrent);
+        const savedExists = savedCurrent && nextProfiles.some((p) => p.id === savedCurrent);
         const preferred =
           (savedExists && savedCurrent) ||
-          remote.find((p) => p.isDefault)?.id ||
-          remote[0].id;
+          nextProfiles.find((p) => p.isDefault)?.id ||
+          (nextProfiles[0] ? nextProfiles[0].id : null);
 
         if (preferred) {
           setCurrentProfileId(preferred);
         }
       } catch (err) {
         if (!canceled) {
-          console.warn("Could not load profiles from API, using cached/default", err);
+          console.warn("Could not load profiles from API, using cached values if any", err);
           setError(err as Error);
         }
       } finally {
@@ -72,18 +72,20 @@ export const useProfiles = () => {
     return () => {
       canceled = true;
     };
-  }, []);
+  }, [currentProfileId]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles));
   }, [profiles]);
 
   useEffect(() => {
-    localStorage.setItem(CURRENT_KEY, currentProfileId);
+    if (currentProfileId) {
+      localStorage.setItem(CURRENT_KEY, currentProfileId);
+    }
   }, [currentProfileId]);
 
   const currentProfile = useMemo(
-    () => profiles.find((p) => p.id === currentProfileId),
+    () => profiles.find((p) => p.id === currentProfileId) || null,
     [profiles, currentProfileId],
   );
 

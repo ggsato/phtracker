@@ -26,17 +26,24 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-if [[ ! -f "${SCRIPT_DIR}/${CONFIG_PATH}" ]]; then
-  echo "[error] Config file not found: ${SCRIPT_DIR}/${CONFIG_PATH}" >&2
+# Resolve config path (absolute or relative to infra/)
+if [[ "${CONFIG_PATH}" = /* ]]; then
+  RESOLVED_CONFIG="${CONFIG_PATH}"
+else
+  RESOLVED_CONFIG="${SCRIPT_DIR}/${CONFIG_PATH}"
+fi
+
+if [[ ! -f "${RESOLVED_CONFIG}" ]]; then
+  echo "[error] Config file not found: ${RESOLVED_CONFIG}" >&2
   echo "Copy config.example.env to ${CONFIG_PATH} and edit values." >&2
   exit 1
 fi
 
 set -a
-source "${SCRIPT_DIR}/${CONFIG_PATH}"
+source "${RESOLVED_CONFIG}"
 set +a
 
-echo "[info] Using config: ${SCRIPT_DIR}/${CONFIG_PATH}"
+echo "[info] Using config: ${RESOLVED_CONFIG}"
 echo "[info] APP_NAME=${APP_NAME} ENV=${ENV}"
 
 bash "${SCRIPT_DIR}/check_prereqs.sh" --ssm-param "${SSM_JWT_AUDIENCE_PARAM}"

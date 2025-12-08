@@ -36,6 +36,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .env.local
+.env.stg
 .env.production
 infra/config.env
+infra/config.dev.env
+infra/config.stg.env
+infra/config.prod.env
 infra/.aws-sam/

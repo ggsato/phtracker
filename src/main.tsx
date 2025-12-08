@@ -4,6 +4,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { registerSW } from "virtual:pwa-register";
+import { AuthProvider } from "./auth/AuthProvider";
 import App from "./App";
 import "./index.css";
 import { I18nProvider } from "./i18n";
@@ -32,7 +33,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <QueryClientProvider client={queryClient}>
         <I18nProvider>
           <BrowserRouter>
-            <App />
+            <AuthProvider>
+              <App />
+            </AuthProvider>
           </BrowserRouter>
         </I18nProvider>
       </QueryClientProvider>

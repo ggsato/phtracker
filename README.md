@@ -22,14 +22,26 @@ Family-friendly pH logging app with a grandma-first simple mode, richer expert t
 
 ## Environment
 - `VITE_API_BASE_URL` (optional): API origin for `/profiles`, `/ph-logs`, `/foods`. Defaults to `/api` so you can proxy during local dev (set to `http://localhost:8000` to hit the FastAPI dev server).
-- `VITE_API_USER_ID` (optional): injected as `x-user-id` header for local/demo use when Cognito/JWT is not wired yet.
+- `VITE_COGNITO_DOMAIN`: Cognito Hosted UI domain, e.g. `https://phtracker-dev.auth.ap-northeast-1.amazoncognito.com`.
+- `VITE_COGNITO_CLIENT_ID`: Cognito app client ID for the SPA.
+- `VITE_COGNITO_REDIRECT_URI`: Callback URL registered in Cognito (e.g. `http://localhost:5173/callback` for local).
+- `VITE_COGNITO_LOGOUT_URI`: Post-logout redirect (e.g. `http://localhost:5173`).
 - Everything else runs client-side; data is synced when the API is reachable and kept locally when offline.
 
-Create a `.env.local` in the project root for local API:
+Create a `.env.local` in the project root for local API + auth:
 ```
 VITE_API_BASE_URL=http://localhost:8000
-VITE_API_USER_ID=demo-user
+VITE_COGNITO_DOMAIN=https://phtracker-dev.auth.ap-northeast-1.amazoncognito.com
+VITE_COGNITO_CLIENT_ID=your_client_id
+VITE_COGNITO_REDIRECT_URI=http://localhost:5173/callback
+VITE_COGNITO_LOGOUT_URI=http://localhost:5173
 ```
+
+### Local test against a staging backend
+- Ensure the Cognito app client allows `http://localhost:5173/callback` and `http://localhost:5173` for callback/logout.
+- Put your staging values in `.env.stg` (same keys as above, but staging URLs/client ID).
+- Start Vite with that mode so it loads `.env.stg`: `npm run dev -- --mode stg`.
+- Sign in via Hosted UI; requests will hit the staging API with bearer tokens.
 
 ## Scripts
 - `npm run dev` – start Vite in dev mode.

@@ -1,7 +1,6 @@
 import { PhLog, PralFoodItem, Profile } from "../types";
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/api";
-const USER_ID = import.meta.env.VITE_API_USER_ID as string | undefined;
 
 const buildUrl = (path: string) => {
   const normalizedBase = BASE_URL.replace(/\/$/, "");
@@ -20,13 +19,25 @@ class ApiError extends Error {
 
 type RequestOptions = RequestInit & { parseJson?: boolean };
 
+type TokenProvider = () => string | null;
+let tokenProvider: TokenProvider = () => null;
+
+export const setAuthTokenProvider = (provider: TokenProvider) => {
+  tokenProvider = provider;
+};
+
+const authHeaders = () => {
+  const token = tokenProvider();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { parseJson = true, headers, body, ...rest } = options;
   const url = buildUrl(path);
   const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
-      ...(USER_ID ? { "x-user-id": USER_ID } : {}),
+      ...authHeaders(),
       ...headers,
     },
     body,
@@ -61,6 +72,14 @@ export const apiClient = {
       id: p.profile_id,
       displayName: p.display_name || p.profile_id,
     }));
+  },
+
+  async createProfile(displayName: string): Promise<Profile> {
+    const data = await request<ProfileResponse>("/profiles", {
+      method: "POST",
+      body: JSON.stringify({ display_name: displayName }),
+    });
+    return { id: data.profile_id, displayName: data.display_name || data.profile_id };
   },
 
   async fetchPhLogs(profileId: string, limit = 50): Promise<PhLog[]> {

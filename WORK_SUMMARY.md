@@ -18,3 +18,10 @@
 - Wire frontend env to Cognito + API Gateway; add PWA bits (manifest, service worker), build Simple Mode default route against live API.
 - Deploy backend: `sam build --use-container && sam deploy --stack-name phtracker-dev --resolve-s3 --capabilities CAPABILITY_IAM`; confirm `/health`/CRUD smoke tests.
 - Deploy frontend to S3 + CloudFront; invalidate cache; on-device PWA install/offline check.
+
+## Updates (Dec 2025)
+- Cognito JWT verification implemented (JWK fetch/cache, issuer/audience checks) accepting both ID tokens and access tokens (aud/client_id/token_use aware). Dev bypass remains opt-in via `ALLOW_DEV_AUTH`.
+- SAM template fixes: always-on JWT authorizer for HTTP API; CORS allows credentials; OPTIONS `{proxy+}` bypasses auth; deploy script now resolves config paths and auto-seeds/updates SSM audience param.
+- Staging stack deployed (`phtracker-stg`): API `https://ktnchz1fu7.execute-api.ap-northeast-1.amazonaws.com`, UserPool `ap-northeast-1_ObwaU1IQD`, App Client `5nm0499r55mveim1mc0t2ocdns`; Hosted UI domain set in Cognito.
+- Frontend auth wired to Cognito (Hosted UI PKCE, bearer tokens). Local staging test: use `.env.stg`, run `npm run dev -- --mode stg`, ensure Cognito callback/logout allow `http://localhost:5173/callback` / `http://localhost:5173`.
+- CORS/auth issues resolved: preflight passes, audience mismatch fixed, profiles load after sign-in against staging API.

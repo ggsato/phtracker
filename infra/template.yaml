@@ -30,6 +30,11 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /phtracker/dev/jwt_audience
     Description: SSM path containing JWT audience/client ID (no secrets committed).
+  EnableApiAuth:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Toggle Cognito JWT authorizer on the HTTP API (use false only for local/dev stacks).
   CustomDomainName:
     Type: String
     Default: ''
@@ -63,6 +68,7 @@ Globals:
 
 Conditions:
   HasIssuer: !Not [ !Equals [ !Ref JwtIssuer, '' ] ]
+  AuthEnabled: !Equals [ !Ref EnableApiAuth, 'true' ]
   HasCustomDomain: !And
     - !Not [ !Equals [ !Ref CustomDomainName, '' ] ]
     - !Not [ !Equals [ !Ref CustomDomainCertArn, '' ] ]
@@ -99,6 +105,19 @@ Resources:
           - PUT
           - PATCH
           - DELETE
+        AllowCredentials: true
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              Audience:
+                - !Ref JwtAudienceParam
+              Issuer: !If
+                - HasIssuer
+                - !Ref JwtIssuer
+                - !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
 
   ApiCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
@@ -131,6 +150,14 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /{proxy+}
             Method: ANY
+        PreflightProxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PhtrackerTable
